@@ -1,0 +1,7 @@
+*.log
+*.tgz
+*.tar.gz
+opencode-bin
+.DS_Store
+tmp/
+.local/

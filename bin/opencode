@@ -1,0 +1,123 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# OpenCode Wrapper for Termux
+# Executes OpenCode using glibc-runner (grun) and manages background daemon
+
+set -e
+
+PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
+BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+STATE_FILE="${XDG_STATE_HOME:-$HOME/.local/state}/opencode/service.json"
+
+# Resolve grun executable
+if command -v grun >/dev/null 2>&1; then
+    GRUN_CMD="grun"
+elif [ -x "$PREFIX/bin/grun" ]; then
+    GRUN_CMD="$PREFIX/bin/grun"
+else
+    echo "Error: 'grun' (from glibc-runner) not found. Please install glibc-runner: pkg in -y glibc-repo && pkg in -y glibc-runner" >&2
+    exit 1
+fi
+
+OPENCODE_BIN="$BIN_DIR/opencode-bin"
+if [ ! -f "$OPENCODE_BIN" ]; then
+    echo "Error: OpenCode binary not found at $OPENCODE_BIN" >&2
+    exit 1
+fi
+
+is_service_running() {
+    if [ ! -f "$STATE_FILE" ]; then
+        return 1
+    fi
+    local pid
+    pid=$(grep -o '"pid":[0-9]*' "$STATE_FILE" 2>/dev/null | cut -d: -f2)
+    if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+        return 0
+    fi
+    return 1
+}
+
+start_service() {
+    if is_service_running; then
+        return 0
+    fi
+    rm -f "$STATE_FILE"
+    setsid "$GRUN_CMD" "$OPENCODE_BIN" serve --service < /dev/null > /dev/null 2>&1 &
+    local count=0
+    while [ $count -lt 50 ]; do
+        if is_service_running; then
+            return 0
+        fi
+        sleep 0.1
+        count=$((count + 1))
+    done
+    echo "Warning: Background service starting took longer than expected." >&2
+    return 0
+}
+
+stop_service() {
+    if [ -f "$STATE_FILE" ]; then
+        local pid
+        pid=$(grep -o '"pid":[0-9]*' "$STATE_FILE" 2>/dev/null | cut -d: -f2)
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            kill "$pid" 2>/dev/null || true
+            local count=0
+            while kill -0 "$pid" 2>/dev/null && [ $count -lt 30 ]; do
+                sleep 0.1
+                count=$((count + 1))
+            done
+            if kill -0 "$pid" 2>/dev/null; then
+                kill -9 "$pid" 2>/dev/null || true
+            fi
+        fi
+        rm -f "$STATE_FILE"
+    fi
+}
+
+# Dispatch
+case "$1" in
+    serve)
+        exec "$GRUN_CMD" "$OPENCODE_BIN" "$@"
+        ;;
+    --help|-h|--version|-v)
+        exec "$GRUN_CMD" "$OPENCODE_BIN" "$@"
+        ;;
+    service)
+        case "$2" in
+            start)
+                start_service
+                url=$(grep -o '"url":"[^"]*' "$STATE_FILE" 2>/dev/null | cut -d'"' -f4)
+                echo "${url:-http://127.0.0.1:49374}"
+                exit 0
+                ;;
+            stop)
+                stop_service
+                echo "OpenCode service stopped."
+                exit 0
+                ;;
+            restart)
+                stop_service
+                start_service
+                url=$(grep -o '"url":"[^"]*' "$STATE_FILE" 2>/dev/null | cut -d'"' -f4)
+                echo "${url:-http://127.0.0.1:49374}"
+                exit 0
+                ;;
+            status)
+                if is_service_running; then
+                    url=$(grep -o '"url":"[^"]*' "$STATE_FILE" 2>/dev/null | cut -d'"' -f4)
+                    echo "running (${url:-http://127.0.0.1:49374})"
+                else
+                    echo "stopped"
+                fi
+                exit 0
+                ;;
+            *)
+                start_service
+                exec "$GRUN_CMD" "$OPENCODE_BIN" "$@"
+                ;;
+        esac
+        ;;
+    *)
+        start_service
+        exec "$GRUN_CMD" "$OPENCODE_BIN" "$@"
+        ;;
+esac
