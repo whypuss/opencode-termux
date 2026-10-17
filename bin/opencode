@@ -4,8 +4,25 @@
 
 set -e
 
-PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
-BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve real directory of script, following symlinks
+SOURCE="${BASH_SOURCE[0]}"
+if command -v realpath >/dev/null 2>&1; then
+    BIN_DIR="$(dirname "$(realpath "$SOURCE")")"
+elif command -v readlink >/dev/null 2>&1; then
+    while [ -h "$SOURCE" ]; do
+        DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+        SOURCE="$(readlink "$SOURCE")"
+        [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+    done
+    BIN_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+else
+    BIN_DIR="$(cd "$(dirname "$SOURCE")" && pwd)"
+fi
+
+# Fallback check
+if [ ! -f "$BIN_DIR/opencode-bin" ] && [ -f "$HOME/.opencode/bin/opencode-bin" ]; then
+    BIN_DIR="$HOME/.opencode/bin"
+fi
 STATE_FILE="${XDG_STATE_HOME:-$HOME/.local/state}/opencode/service.json"
 
 # Resolve grun executable
