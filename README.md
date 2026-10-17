@@ -29,12 +29,12 @@
 在 Termux 终端中复制并运行以下命令：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<YOUR_GITHUB_USERNAME>/opencode-termux/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/whypuss/opencode-termux/main/install.sh | bash
 ```
 
 > 🇨🇳 **国内用户加速通道**（如果无法直接访问 GitHub Raw）：
 > ```bash
-> curl -fsSL https://ghproxy.net/https://raw.githubusercontent.com/<YOUR_GITHUB_USERNAME>/opencode-termux/main/install.sh | bash
+> curl -fsSL https://ghproxy.net/https://raw.githubusercontent.com/whypuss/opencode-termux/main/install.sh | bash
 > ```
 
 ---
@@ -45,7 +45,7 @@ curl -fsSL https://raw.githubusercontent.com/<YOUR_GITHUB_USERNAME>/opencode-ter
 
 ```bash
 # 1. 克隆本仓库
-git clone https://github.com/<YOUR_GITHUB_USERNAME>/opencode-termux.git
+git clone https://github.com/whypuss/opencode-termux.git
 cd opencode-termux
 
 # 2. 赋予执行权限并运行安装脚本

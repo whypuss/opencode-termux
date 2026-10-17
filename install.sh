@@ -2,9 +2,9 @@
 # ==============================================================================
 # OpenCode Installer for Termux (Android)
 #
-# GitHub: https://github.com/your-username/opencode-termux
+# GitHub: https://github.com/whypuss/opencode-termux
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/<user>/<repo>/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/whypuss/opencode-termux/main/install.sh | bash
 #   or: bash install.sh [--version <version>] [--mirror <npm|npmmirror>]
 # ==============================================================================
 
